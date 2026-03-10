@@ -8,11 +8,10 @@ class Settings(BaseSettings):
     REDIS_URL: str
     GEMINI_API_KEY: str
     # Add this line so Pydantic maps your .env variable to the settings object:
-    HUGGINGFACE_API_KEY: str 
-    STABILITY_API_KEY: Optional[str] = None
-    REPLICATE_API_TOKEN: Optional[str] = None
+    HUGGINGFACE_API_KEY: str
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()
