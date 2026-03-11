@@ -13,3 +13,4 @@ Pillow>=10.4.0
 supabase>=2.6.0
 huggingface_hub>=0.24.0
 psycopg2-binary>=2.9.9
+numpy>=1.26.0
