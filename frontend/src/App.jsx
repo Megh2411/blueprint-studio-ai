@@ -45,6 +45,8 @@ export default function App() {
 
   useEffect(() => {
     clearCanvas();
+    const currentApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+    console.log("[BLUEPRINT STUDIO AI] Current Backend API URL:", currentApiUrl);
     let socket;
     let reconnectTimeout;
 
