@@ -29,11 +29,11 @@ async def optimize_prompt(user_prompt: str) -> str:
             "parts": [{"text": system_instruction}]
         },
         "contents": [
-            {"parts": [{"text": f"Expand this prompt for an architectural rendering: {user_prompt}"}]}
+            {"parts": [{"text": f"Expand this prompt: {user_prompt}"}]}
         ],
         "generationConfig": {
             "temperature": 0.7,
-            "maxOutputTokens": 300
+            "maxOutputTokens": 2000
         }
     }
 
