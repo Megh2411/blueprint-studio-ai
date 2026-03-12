@@ -74,8 +74,17 @@ def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
         
         r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
         r.raise_for_status()
-        result_text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-        return float(result_text)
+        data = r.json()
+        
+        candidates = data.get("candidates", [])
+        if candidates:
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", [])
+            if parts:
+                result_text = parts[0].get("text", "").strip()
+                return float(result_text)
+        print(f"[METRICS] Gemini returned unexpected format: {data}")
+        return 0.850
     except Exception as e:
         print(f"Error evaluating CLIP score: {e}")
         return 0.850

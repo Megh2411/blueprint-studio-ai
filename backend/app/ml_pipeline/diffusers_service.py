@@ -16,7 +16,7 @@ class StableDiffusionImageToImageService:
     Utilizes a Google Gemini + Hugging Face FLUX.1 layout-preserving pipeline.
     """
 
-    def __init__(self, model_id: str = "black-forest-labs/FLUX.1-schnell") -> None:
+    def __init__(self, model_id: str = "runwayml/stable-diffusion-v1-5") -> None:
         self.model_id = model_id
 
     def generate(
@@ -88,15 +88,26 @@ class StableDiffusionImageToImageService:
             try:
                 gemini_r = requests.post(gemini_url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
                 gemini_r.raise_for_status()
-                refined_prompt = gemini_r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                print(f"[ML] Gemini Layout Prompt Map: {refined_prompt}")
+                data = gemini_r.json()
+                
+                candidates = data.get("candidates", [])
+                if candidates:
+                    content = candidates[0].get("content", {})
+                    parts = content.get("parts", [])
+                    if parts:
+                        refined_prompt = parts[0].get("text", "").strip()
+                        print(f"[ML] Gemini Layout Prompt Map: {refined_prompt}")
+                    else:
+                        raise KeyError("parts")
+                else:
+                    raise KeyError("candidates")
             except Exception as err:
                 print(f"[WARN] Gemini layout mapper failed: {err}. Falling back to original prompt.")
                 refined_prompt = prompt
         
         try:
-            # Call FLUX.1-schnell on Hugging Face Serverless API
-            hf_url = f"https://router.huggingface.co/hf-inference/models/{self.model_id}"
+            # Use official, stable Hugging Face Inference API
+            hf_url = f"https://api-inference.huggingface.co/models/{self.model_id}"
             hf_headers = {
                 "Authorization": f"Bearer {hf_key}",
                 "Content-Type": "application/json"
@@ -111,4 +122,4 @@ class StableDiffusionImageToImageService:
             res_img = Image.open(io.BytesIO(flux_r.content)).convert("RGB")
             return GeneratedImageResult(res_img)
         except Exception as err:
-            raise RuntimeError(f"FLUX generation failed: {err}")
+            raise RuntimeError(f"Model generation failed: {err}")
