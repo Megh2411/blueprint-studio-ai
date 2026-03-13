@@ -7,6 +7,8 @@ from app.core.storage import upload_sketch
 from pydantic import BaseModel
 import uuid
 
+from app.utils.rate_limiter import RateLimiter
+
 router = APIRouter()
 
 class RenderRequest(BaseModel):
@@ -19,7 +21,7 @@ class RenderRequest(BaseModel):
     cfg_scale: float = 7.0
 
 # Notice the empty string "" here, which maps to exactly /api/renders
-@router.post("")
+@router.post("", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 def create_render_job(request: RenderRequest, db: Session = Depends(get_db)):
     """Creates a new job, uploads sketch to storage, and sends it to the Celery queue."""
     
