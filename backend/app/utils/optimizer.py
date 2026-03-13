@@ -7,13 +7,12 @@ async def optimize_prompt(user_prompt: str) -> str:
     Uses pure async HTTP REST calls to prevent Garbage Collection crashes
     and ASGI event loop conflicts.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    raw_keys = os.getenv("GEMINI_API_KEY", "")
+    api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+    if not api_keys:
         print("Warning: GEMINI_API_KEY not found.")
         return user_prompt
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-    
     system_instruction = (
         "You are an expert prompt engineer for generative AI models. "
         "Your task is to take a short, simple prompt describing an object, scene, space, or building and expand it "
@@ -42,24 +41,29 @@ async def optimize_prompt(user_prompt: str) -> str:
         import asyncio
         async with httpx.AsyncClient() as client:
             data = None
-            for attempt in range(3):
-                try:
-                    response = await client.post(url, json=payload, timeout=10.0)
-                    if response.status_code in (429, 503, 502):
-                        print(f"[WARN] Gemini async returned {response.status_code}. Retrying in {1.5 * (attempt + 1)}s...")
-                        await asyncio.sleep(1.5 * (attempt + 1))
-                        continue
-                    response.raise_for_status()
-                    data = response.json()
+            for key_idx, api_key in enumerate(api_keys):
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                for attempt in range(2):
+                    try:
+                        response = await client.post(url, json=payload, timeout=10.0)
+                        if response.status_code in (429, 503, 502):
+                            print(f"[WARN] Gemini key {key_idx+1} returned {response.status_code}. Trying next key...")
+                            await asyncio.sleep(1.0)
+                            break # Break inner loop to try the next key
+                        response.raise_for_status()
+                        data = response.json()
+                        break
+                    except Exception as attempt_err:
+                        if attempt == 1 and key_idx == len(api_keys) - 1:
+                            raise attempt_err
+                        print(f"[WARN] Gemini key {key_idx+1} attempt {attempt+1} failed: {attempt_err}. Retrying...")
+                        await asyncio.sleep(1.0)
+                
+                if data:
                     break
-                except Exception as attempt_err:
-                    if attempt == 2:
-                        raise attempt_err
-                    print(f"[WARN] Gemini async attempt {attempt+1} failed: {attempt_err}. Retrying...")
-                    await asyncio.sleep(1.5 * (attempt + 1))
 
             if not data:
-                raise RuntimeError("Gemini failed to return data after async retries")
+                raise RuntimeError("All Gemini keys in the pool failed to return data")
 
             # Parse the Gemini REST response structure
             optimized_text = data["candidates"][0]["content"]["parts"][0]["text"]
