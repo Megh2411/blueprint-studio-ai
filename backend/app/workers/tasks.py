@@ -68,13 +68,30 @@ def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
             ],
             "generationConfig": {
                 "temperature": 0.1,
-                "maxOutputTokens": 10
+                "maxOutputTokens": 2000
             }
         }
         
-        r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
-        r.raise_for_status()
-        data = r.json()
+        import time
+        data = None
+        for attempt in range(3):
+            try:
+                r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+                if r.status_code in (429, 503, 502):
+                    print(f"[WARN] Gemini CLIP score evaluation returned {r.status_code}. Retrying in {1.5 * (attempt + 1)}s...")
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                r.raise_for_status()
+                data = r.json()
+                break
+            except Exception as attempt_err:
+                if attempt == 2:
+                    raise attempt_err
+                print(f"[WARN] Gemini CLIP score attempt {attempt+1} failed: {attempt_err}. Retrying...")
+                time.sleep(1.5 * (attempt + 1))
+                
+        if not data:
+            raise RuntimeError("Gemini CLIP score evaluation failed to return data after retries")
         
         candidates = data.get("candidates", [])
         if candidates:
