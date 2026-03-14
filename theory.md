@@ -22,7 +22,7 @@ To ensure the generated render matches the user's sketch or design composition, 
 
 In professional pipelines, **ControlNet** copies the weights of the U-Net's encoding blocks, keeping the original network locked. It takes an edge-condition map (like Canny, HED, Scribbles, or depth maps) and injects spatial boundaries directly into the U-Net's skip connections.
 
-### Our Gemini 2.5 Flash + FLUX.1 Composition Pipeline
+### Our Gemini 3.1 Flash-Lite + FLUX.1 Composition Pipeline
 To bypass API restrictions on Hugging Face's serverless pipelines, Blueprint Studio AI implements a hybrid agentic architecture:
 *   **Composition Mapping**: Instead of feeding pure noise, we use **Image-to-Image (Img2Img) Latent Initialization**. The U-Net is seeded with the structural canvas sketch directly (latents initialized from $\mathcal{E}(\text{sketch})$ instead of pure random noise).
 *   **The Denoising Strength Hyperparameter ($S$)**: 
@@ -64,14 +64,14 @@ Where:
 ### B. Semantic Score (CLIP Alignment via Gemini Vision)
 CLIP (Contrastive Language-Image Pre-training) measures how closely an image matches a text description.
 
-In this project, we implement a state-of-the-art **LLM-as-an-Evaluator** pattern. The generated image along with the generation prompt is sent to **Gemini 2.5 Flash**. The model evaluates the semantic composition of the image (e.g. materials, spatial alignment, atmospheric lighting) against the requested description, returning a standardized mathematical score between $0.000$ and $1.000$.
+In this project, we implement a state-of-the-art **LLM-as-an-Evaluator** pattern. The generated image along with the generation prompt is sent to **Gemini 3.1 Flash-Lite**. The model evaluates the semantic composition of the image (e.g. materials, spatial alignment, atmospheric lighting) against the requested description, returning a standardized mathematical score between $0.000$ and $1.000$.
 
 ---
 
 ## 🔑 5. API Key Pooling & Failover Rotation
 
 Free-tier public APIs (like Google Gemini and Hugging Face Serverless) enforce strict rate limits:
-*   **Gemini 2.5 Flash**: Capped at 15 Requests Per Minute (RPM) on the free tier.
+*   **Gemini 3.1 Flash-Lite**: Capped at 15 Requests Per Minute (RPM) and 500 Requests Per Day (RPD) on the free tier.
 *   **Hugging Face**: Capped by total request credits or concurrency constraints (often returning HTTP `429 Too Many Requests` or `402 Payment Required`).
 
 To ensure high availability and prevent application-level failures, Blueprint Studio AI implements an **API Key Rotation Pool**:

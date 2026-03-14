@@ -4,19 +4,19 @@
 
 Blueprint Studio AI is a state-of-the-art Web application tailored for architects, interior designers, and visual artists. It allows users to sketch layout outlines or upload reference structures, provide text prompts, and instantly generate hyper-realistic architectural designs. 
 
-Powered by a hybrid pipeline utilizing **FLUX.1-schnell** (composition-accurate image-to-image/sketch guidance) and **Gemini 2.5 Flash** (agentic prompt mapping & visual scoring), the platform provides real-time telemetry metrics (Structural Similarity - SSIM and semantic CLIP score evaluation) for every generated render.
+Powered by a hybrid pipeline utilizing **FLUX.1-schnell** (composition-accurate image-to-image/sketch guidance) and **Gemini 3.1 Flash-Lite** (agentic prompt mapping & visual scoring), the platform provides real-time telemetry metrics (Structural Similarity - SSIM and semantic CLIP score evaluation) for every generated render.
 
 ---
 
 ## 🌟 Key Features
 
 *   **Interactive Sketching & Inpainting Canvas**: Draw structure outlines directly in the browser or load an inpainting mask to edit specific sections of your layout.
-*   **Prompt Optimization (Magic Enhance)**: Refines raw user prompts into rich descriptive prompts using Gemini 2.5 Flash, adding atmospheric detail, lighting styles, and architectural textures.
+*   **Prompt Optimization (Magic Enhance)**: Refines raw user prompts into rich descriptive prompts using Gemini 3.1 Flash-Lite, adding atmospheric detail, lighting styles, and architectural textures.
 *   **Composition-Accurate Render Engine**: Translates sketches into realistic images while respecting structure boundaries using FLUX.1.
 *   **Iterative Design Cycle**: Load generated renders back into the canvas as sketch references with one click to edit, refine, or inpaint further.
 *   **Real-time AI Telemetry**: 
     *   **SSIM (Structural Similarity Index)**: Measures structural fidelity between the original sketch and the final render.
-    *   **Semantic Score (CLIP)**: Calculates prompt alignment using Gemini 2.5 Flash's vision API to score aesthetic correlation.
+    *   **Semantic Score (CLIP)**: Calculates prompt alignment using Gemini 3.1 Flash-Lite's vision API to score aesthetic correlation.
 *   **Frictionless Session Management**: Uses browser-assigned client sessions, linking your history to PostgreSQL database records via Supabase without requiring forced user logins.
 *   **API Key Rotation Pools**: Automatically rotates through comma-separated pools of Gemini and Hugging Face keys if rate limits (`429`), credit exhaustion (`402`), or server errors (`503`) occur, guaranteeing high availability.
 *   **Redis-Backed API Rate Limiting**: Automatically limits requests per client IP address (5 renders/min, 10 optimizes/min) via Upstash Redis to prevent spam and quota abuse, soft-failing gracefully if Redis goes offline.
@@ -33,7 +33,7 @@ Powered by a hybrid pipeline utilizing **FLUX.1-schnell** (composition-accurate 
 *   **Database & Storage**: PostgreSQL & Storage Buckets (Supabase)
 *   **Model Pipelines**:
 *   **Image Generation**: FLUX.1-schnell (Hugging Face serverless API)
-*   **Vision & Text LLM**: Google Gemini 2.5 Flash API
+*   **Vision & Text LLM**: Google Gemini 3.1 Flash-Lite API
 
 ---
 
