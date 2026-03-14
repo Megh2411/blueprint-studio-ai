@@ -75,7 +75,7 @@ def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
         import time
         data = None
         for key_idx, api_key in enumerate(api_keys):
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={api_key}"
             for attempt in range(2):
                 try:
                     r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)

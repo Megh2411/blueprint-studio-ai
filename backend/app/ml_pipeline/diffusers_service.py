@@ -88,7 +88,7 @@ class StableDiffusionImageToImageService:
                 import time
                 data = None
                 for key_idx, api_key in enumerate(api_keys):
-                    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={api_key}"
                     for attempt in range(2):
                         try:
                             gemini_r = requests.post(gemini_url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)

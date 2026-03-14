@@ -42,7 +42,7 @@ async def optimize_prompt(user_prompt: str) -> str:
         async with httpx.AsyncClient() as client:
             data = None
             for key_idx, api_key in enumerate(api_keys):
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={api_key}"
                 for attempt in range(2):
                     try:
                         response = await client.post(url, json=payload, timeout=10.0)
