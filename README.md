@@ -2,6 +2,8 @@
 
 > **Iterative Sketch-to-Render Architecture Engine powered by Latent Diffusion, ControlNet, and LLM-Guided Prompt Refinement.**
 
+🌐 **Live Demo:** [blueprint-studio-ai.vercel.app](https://blueprint-studio-ai.vercel.app/)
+
 Blueprint Studio AI is a state-of-the-art Web application tailored for architects, interior designers, and visual artists. It allows users to sketch layout outlines or upload reference structures, provide text prompts, and instantly generate hyper-realistic architectural designs. 
 
 Powered by a hybrid pipeline utilizing **FLUX.1-schnell** (composition-accurate image-to-image/sketch guidance) and **Gemini 3.1 Flash-Lite** (agentic prompt mapping & visual scoring), the platform provides real-time telemetry metrics (Structural Similarity - SSIM and semantic CLIP score evaluation) for every generated render.
