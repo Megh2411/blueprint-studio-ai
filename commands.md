@@ -93,9 +93,9 @@ Scripts to verify backend connectivity, database models, and API endpoints.
 
 ```powershell
 # Run E2E Database queries test
-python backend/app/tests/test_e2e_db.py
+python backend/tests/test_e2e_db.py
 
 # Run API endpoint generator test
-python backend/app/tests/test_e2e_api.py
+python backend/tests/test_e2e_api.py
 ```
 *(Make sure your virtual environment is active in this terminal prior to execution).*

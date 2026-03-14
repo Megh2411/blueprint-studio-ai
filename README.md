@@ -18,6 +18,8 @@ Powered by a hybrid pipeline utilizing **FLUX.1-schnell** (composition-accurate 
     *   **SSIM (Structural Similarity Index)**: Measures structural fidelity between the original sketch and the final render.
     *   **Semantic Score (CLIP)**: Calculates prompt alignment using Gemini 2.5 Flash's vision API to score aesthetic correlation.
 *   **Frictionless Session Management**: Uses browser-assigned client sessions, linking your history to PostgreSQL database records via Supabase without requiring forced user logins.
+*   **API Key Rotation Pools**: Automatically rotates through comma-separated pools of Gemini and Hugging Face keys if rate limits (`429`), credit exhaustion (`402`), or server errors (`503`) occur, guaranteeing high availability.
+*   **Redis-Backed API Rate Limiting**: Automatically limits requests per client IP address (5 renders/min, 10 optimizes/min) via Upstash Redis to prevent spam and quota abuse, soft-failing gracefully if Redis goes offline.
 *   **Background Worker Queue**: Processes image generation tasks asynchronously using Celery and Redis to handle concurrent requests seamlessly.
 *   **Interactive History Gallery**: Save, revisit, redraft, and download high-resolution renders of all past designs directly.
 
@@ -27,11 +29,11 @@ Powered by a hybrid pipeline utilizing **FLUX.1-schnell** (composition-accurate 
 
 *   **Frontend**: React (Vite), Tailwind CSS, Lucide Icons
 *   **Backend API**: FastAPI (Python), SQLAlchemy, WebSockets
-*   **Task Queue**: Celery, Redis (Upstash)
+*   **Task Queue & Security**: Celery, Redis-backed Rate Limiter (Upstash Redis)
 *   **Database & Storage**: PostgreSQL & Storage Buckets (Supabase)
 *   **Model Pipelines**:
-    *   **Image Generation**: FLUX.1-schnell (Hugging Face serverless API)
-    *   **Vision & Text LLM**: Google Gemini 2.5 Flash API
+*   **Image Generation**: FLUX.1-schnell (Hugging Face serverless API)
+*   **Vision & Text LLM**: Google Gemini 2.5 Flash API
 
 ---
 
