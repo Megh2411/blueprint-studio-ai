@@ -14,17 +14,10 @@ from app.utils.optimizer import optimize_prompt
 
 app = FastAPI()
 
-# Allow CORS for Vercel production and local development origins
-origins = [
-    "https://blueprint-studio-ai.vercel.app",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
+# Allow all origins for frictionless production deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
