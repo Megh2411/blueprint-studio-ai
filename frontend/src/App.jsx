@@ -45,21 +45,47 @@ export default function App() {
 
   useEffect(() => {
     clearCanvas();
-    socketRef.current = new WebSocket(`ws://127.0.0.1:8000/ws/${clientId}`);
-    socketRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.status === 'completed') {
-        setResultImage(data.render_path);
-        setMetrics(data.metrics);
-        setIsRendering(false);
-        setGalleryRefreshTrigger(prev => prev + 1); // Trigger gallery reload
-      } else if (data.status === 'failed') {
-        setIsRendering(false);
-        alert("Render failed. Check backend logs.");
+    let socket;
+    let reconnectTimeout;
+
+    const connectWebSocket = () => {
+      console.log("[WEBSOCKET] Connecting...");
+      socket = new WebSocket(`ws://127.0.0.1:8000/ws/${clientId}`);
+      socketRef.current = socket;
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.status === 'completed') {
+          setResultImage(data.render_path);
+          setMetrics(data.metrics);
+          setIsRendering(false);
+          setGalleryRefreshTrigger(prev => prev + 1);
+        } else if (data.status === 'failed') {
+          setIsRendering(false);
+          alert("Render failed. Check backend logs.");
+        }
+      };
+
+      socket.onclose = (e) => {
+        console.log("[WEBSOCKET] Connection closed. Attempting reconnect in 3s...", e.reason);
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+      };
+
+      socket.onerror = (err) => {
+        console.error("[WEBSOCKET] Error:", err);
+        socket.close();
+      };
+    };
+
+    connectWebSocket();
+
+    return () => {
+      clearTimeout(reconnectTimeout);
+      if (socket) {
+        socket.close();
       }
     };
-    return () => socketRef.current?.close();
-  }, [clientId, controlStrength]);
+  }, [clientId]);
 
   const startDrawing = (e) => {
     const canvas = canvasRef.current;

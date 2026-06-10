@@ -65,7 +65,11 @@ def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
                         }
                     ]
                 }
-            ]
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "maxOutputTokens": 10
+            }
         }
         
         r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
