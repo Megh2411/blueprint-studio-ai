@@ -50,7 +50,12 @@ export default function App() {
 
     const connectWebSocket = () => {
       console.log("[WEBSOCKET] Connecting...");
-      socket = new WebSocket(`ws://127.0.0.1:8000/ws/${clientId}`);
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const wsProto = apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
+      const cleanHost = apiBaseUrl.replace(/^https?:\/\//, '');
+      const wsUrl = `${wsProto}://${cleanHost}/ws/${clientId}`;
+      
+      socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
       socket.onmessage = (event) => {
@@ -155,7 +160,8 @@ export default function App() {
     if (!prompt) return;
     setIsOptimizing(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/prompt/optimize', {
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const response = await fetch(`${apiBaseUrl}/api/prompt/optimize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt })
@@ -207,7 +213,8 @@ export default function App() {
     const base64Image = canvas.toDataURL('image/png');
 
     try {
-      await fetch('http://127.0.0.1:8000/api/renders', {
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      await fetch(`${apiBaseUrl}/api/renders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -162,9 +162,12 @@ def process_render_job(self, job_id: str, control_strength: float = 0.7, steps: 
  
         # 5. Webhook Notification
         try:
+            import os
             import requests
+            port = os.getenv("PORT", "8000")
+            webhook_url = f"http://127.0.0.1:{port}/api/notify-render-complete"
             requests.post(
-                "http://127.0.0.1:8000/api/notify-render-complete",
+                webhook_url,
                 json={
                     "user_id": str(job.user_id),
                     "render_path": final_image_url,
@@ -175,10 +178,10 @@ def process_render_job(self, job_id: str, control_strength: float = 0.7, steps: 
                 },
                 timeout=3
             )
-            print("[WEBHOOK] Webhook triggered!")
+            print(f"[WEBHOOK] Webhook triggered on {webhook_url}!")
         except Exception as e:
             print(f"[WEBHOOK] Webhook failed: {e}")
- 
+
         return {"status": "success", "url": final_image_url}
         
     except Exception as e:
@@ -193,8 +196,11 @@ def process_render_job(self, job_id: str, control_strength: float = 0.7, steps: 
             
             # Notify failure to frontend
             try:
+                import os
                 import requests
-                requests.post("http://127.0.0.1:8000/api/notify-render-complete", 
+                port = os.getenv("PORT", "8000")
+                webhook_url = f"http://127.0.0.1:{port}/api/notify-render-complete"
+                requests.post(webhook_url, 
                               json={"user_id": str(job.user_id), "status": "failed"}, timeout=3)
             except:
                 pass
