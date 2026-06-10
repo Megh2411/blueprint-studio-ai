@@ -121,3 +121,20 @@ CREATE TABLE IF NOT EXISTS render_jobs (
 2.  Click **New Bucket** and name it `renders`.
 3.  Set the bucket visibility to **Public**.
 4.  Add a storage policy allowing **Insert** and **Select** operations for all users so the backend API and worker can upload files.
+
+---
+
+## 🚀 Production Deployment (Vercel & Render)
+
+### 1. Frontend (Vercel)
+*   **Vercel Project Setup**: Link your GitHub repo to Vercel and select `frontend` as the **Root Directory**.
+*   **Production Domain**: After deployment, Vercel will provide a URL (e.g. `https://blueprint-studio-ai.vercel.app`). Ensure this URL matches the CORS list in `backend/app/main.py`.
+
+### 2. Backend API & Celery Worker (Render)
+To save costs on Render's free tier, we run both the FastAPI server and the Celery worker in the **same container** using `start.sh`.
+*   **Service Type**: Create a new **Web Service** on Render.
+*   **Root Directory**: Set to `backend`.
+*   **Build Command**: `pip install -r requirements.txt`
+*   **Start Command**: `./start.sh` (make sure it's executable, or set start command to `chmod +x start.sh && ./start.sh`)
+*   **Environment Variables**: Add all your `.env` variables (`DATABASE_URL`, `REDIS_URL`, etc.) to the Render environment settings dashboard.
+
