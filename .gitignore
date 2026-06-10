@@ -1,0 +1,53 @@
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+bin/
+lib/
+include/
+share/
+
+# Python caching and logs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+celerybeat-schedule
+
+# Node / Frontend dependencies
+node_modules/
+dist/
+build/
+.svelte-kit/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# Local databases and SQLite
+*.db
+*.sqlite
+*.sqlite3
+backend/dev.db
+
+# Environment and sensitive keys
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db

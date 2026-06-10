@@ -1,0 +1,1 @@
+from app.ml_pipeline.diffusers_service import StableDiffusionImageToImageService as StableDiffusionControlNetService
