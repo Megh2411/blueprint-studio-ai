@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()  # Must be at the top!
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict
@@ -11,6 +11,7 @@ import json
 # This is the crucial line that was missing! It imports your render endpoints.
 from app.api.routes import renders 
 from app.utils.optimizer import optimize_prompt
+from app.utils.rate_limiter import RateLimiter
 
 app = FastAPI()
 
@@ -30,7 +31,7 @@ app.include_router(renders.router, prefix="/api/renders", tags=["Renders"])
 class PromptRequest(BaseModel):
     prompt: str
 
-@app.post("/api/prompt/optimize")
+@app.post("/api/prompt/optimize", dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def optimize_prompt_endpoint(request: PromptRequest):
     optimized = await optimize_prompt(request.prompt)
     return {"optimized_prompt": optimized}
