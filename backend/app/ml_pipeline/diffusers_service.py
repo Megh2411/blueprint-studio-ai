@@ -33,12 +33,13 @@ class StableDiffusionImageToImageService:
         Generates an image using Gemini Layout Mapping and FLUX.1.
         """
         from app.core.config import settings
-        gemini_key = settings.GEMINI_API_KEY
+        raw_keys = settings.GEMINI_API_KEY or ""
+        api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
         hf_key = settings.HUGGINGFACE_API_KEY
-
-        if not gemini_key or not hf_key:
+ 
+        if not api_keys or not hf_key:
             raise ValueError("Both GEMINI_API_KEY and HUGGINGFACE_API_KEY must be set in backend .env.")
-
+ 
         import numpy as np
         img_np = np.array(image.convert("L"))
         # The canvas default background is filled with solid white (pixel value 255)
@@ -56,7 +57,6 @@ class StableDiffusionImageToImageService:
             image_b64 = base64.b64encode(img_byte_arr.getvalue()).decode("utf-8")
             
             # Use Gemini to describe composition and preserve structure
-            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
             system_instruction = (
                 "You are an AI layout-preserving prompt architect. Your job is to analyze the user's sketch and text prompt, and write a single, cohesive, highly descriptive prompt for an image generator. "
                 "Describe the subject, colors, composition, and background, ensuring you match the shapes and positions from the sketch. "
@@ -82,27 +82,32 @@ class StableDiffusionImageToImageService:
             }
             
             try:
-                # Robust retry logic for Gemini (handling 429/503 rate limits)
+                # Robust retry logic with key rotation pooling (handling 429/503 rate limits)
                 import time
                 data = None
-                for attempt in range(3):
-                    try:
-                        gemini_r = requests.post(gemini_url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
-                        if gemini_r.status_code in (429, 503, 502):
-                            print(f"[WARN] Gemini returned {gemini_r.status_code}. Retrying in {1.5 * (attempt + 1)}s...")
-                            time.sleep(1.5 * (attempt + 1))
-                            continue
-                        gemini_r.raise_for_status()
-                        data = gemini_r.json()
+                for key_idx, api_key in enumerate(api_keys):
+                    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+                    for attempt in range(2):
+                        try:
+                            gemini_r = requests.post(gemini_url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+                            if gemini_r.status_code in (429, 503, 502):
+                                print(f"[WARN] Gemini key {key_idx+1} returned {gemini_r.status_code}. Trying next key...")
+                                time.sleep(1.0)
+                                break # Break inner loop to try next key in the pool
+                            gemini_r.raise_for_status()
+                            data = gemini_r.json()
+                            break
+                        except Exception as attempt_err:
+                            if attempt == 1 and key_idx == len(api_keys) - 1:
+                                raise attempt_err
+                            print(f"[WARN] Gemini key {key_idx+1} attempt {attempt+1} failed: {attempt_err}. Retrying...")
+                            time.sleep(1.0)
+                    
+                    if data:
                         break
-                    except Exception as attempt_err:
-                        if attempt == 2:
-                            raise attempt_err
-                        print(f"[WARN] Gemini attempt {attempt+1} failed: {attempt_err}. Retrying...")
-                        time.sleep(1.5 * (attempt + 1))
                 
                 if not data:
-                    raise RuntimeError("Gemini failed to return data after retries")
+                    raise RuntimeError("All Gemini keys in the pool failed to return data after retries")
 
                 candidates = data.get("candidates", [])
                 if candidates:

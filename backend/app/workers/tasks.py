@@ -36,8 +36,9 @@ def calculate_real_ssim(img1: Image.Image, img2: Image.Image) -> float:
         return 0.800
 
 def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
-    gemini_key = settings.GEMINI_API_KEY
-    if not gemini_key:
+    raw_keys = settings.GEMINI_API_KEY or ""
+    api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
+    if not api_keys:
         return 0.850
         
     try:
@@ -45,7 +46,6 @@ def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
         image.save(buffered, format="PNG")
         image_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
         payload = {
             "contents": [
                 {
@@ -74,21 +74,26 @@ def evaluate_real_clip_score(image: Image.Image, prompt: str) -> float:
         
         import time
         data = None
-        for attempt in range(3):
-            try:
-                r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
-                if r.status_code in (429, 503, 502):
-                    print(f"[WARN] Gemini CLIP score evaluation returned {r.status_code}. Retrying in {1.5 * (attempt + 1)}s...")
-                    time.sleep(1.5 * (attempt + 1))
-                    continue
-                r.raise_for_status()
-                data = r.json()
+        for key_idx, api_key in enumerate(api_keys):
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            for attempt in range(2):
+                try:
+                    r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+                    if r.status_code in (429, 503, 502):
+                        print(f"[WARN] Gemini CLIP key {key_idx+1} returned {r.status_code}. Trying next key...")
+                        time.sleep(1.0)
+                        break # Break inner loop to try next key
+                    r.raise_for_status()
+                    data = r.json()
+                    break
+                except Exception as attempt_err:
+                    if attempt == 1 and key_idx == len(api_keys) - 1:
+                        raise attempt_err
+                    print(f"[WARN] Gemini CLIP key {key_idx+1} attempt {attempt+1} failed: {attempt_err}. Retrying...")
+                    time.sleep(1.0)
+            
+            if data:
                 break
-            except Exception as attempt_err:
-                if attempt == 2:
-                    raise attempt_err
-                print(f"[WARN] Gemini CLIP score attempt {attempt+1} failed: {attempt_err}. Retrying...")
-                time.sleep(1.5 * (attempt + 1))
                 
         if not data:
             raise RuntimeError("Gemini CLIP score evaluation failed to return data after retries")
