@@ -65,3 +65,34 @@ Where:
 CLIP (Contrastive Language-Image Pre-training) measures how closely an image matches a text description.
 
 In this project, we implement a state-of-the-art **LLM-as-an-Evaluator** pattern. The generated image along with the generation prompt is sent to **Gemini 2.5 Flash**. The model evaluates the semantic composition of the image (e.g. materials, spatial alignment, atmospheric lighting) against the requested description, returning a standardized mathematical score between $0.000$ and $1.000$.
+
+---
+
+## 🔑 5. API Key Pooling & Failover Rotation
+
+Free-tier public APIs (like Google Gemini and Hugging Face Serverless) enforce strict rate limits:
+*   **Gemini 2.5 Flash**: Capped at 15 Requests Per Minute (RPM) on the free tier.
+*   **Hugging Face**: Capped by total request credits or concurrency constraints (often returning HTTP `429 Too Many Requests` or `402 Payment Required`).
+
+To ensure high availability and prevent application-level failures, Blueprint Studio AI implements an **API Key Rotation Pool**:
+1.  **Environment Pools**: API keys are loaded as a comma-separated list: `API_KEYS = [k.strip() for k in os.getenv("API_KEY").split(",") if k.strip()]`.
+2.  **Sequential Failover**: The API client makes a request using `API_KEYS[0]`.
+3.  **Dynamic Exception Interception**: If the request fails with a status code of `429`, `402`, `403`, or `503`, the client intercepts the exception, rotates to the next index `API_KEYS[1]`, sleeps for a short duration (exponential backoff), and attempts the operation again.
+4.  **Resilience**: The pipeline will only raise a user-facing error if *all* keys in the configured pool fail.
+
+---
+
+## 🛡️ 6. Redis-Backed Rate Limiting Security
+
+To protect our third-party API quotas from malicious abuse or infinite loops, the FastAPI backend applies a **Fixed-Window Rate Limiting** algorithm implemented over our **Upstash Redis** instance.
+
+### The Algorithm
+For each client request to a protected endpoint:
+1.  Identify the client identifier (host IP address $IP$ and route path $Route$).
+2.  Construct a unique Redis key: $Key = \text{"rate\_limit:"} + IP + \text{":"} + Route$.
+3.  Query the key's current value in Redis:
+    *   If the key does not exist: Initialize the key to $1$ and set a Time-To-Live (TTL) expiry of $60$ seconds.
+    *   If the key exists and its value is less than the limit $N$: Increment the value by $1$.
+    *   If the key exists and its value is greater than or equal to $N$: Reject the request instantly, returning an HTTP `429 Too Many Requests` status code along with the remaining TTL value as `Retry-After`.
+4.  **Soft-Fail Safety**: In the event of a Redis connection loss, the middleware catches the connection error and allows the request to proceed (failing soft), ensuring that rate-limiter infrastructure downtime never disrupts end-user accessibility.
+

@@ -58,9 +58,9 @@ Ensure you have the following software installed on your machine:
     # Redis Task Broker URL
     REDIS_URL="redis://default:[password]@[endpoint]:6379"
 
-    # API Keys for AI Models
-    GEMINI_API_KEY="AIzaSy..."
-    HUGGINGFACE_API_KEY="hf_..."
+    # API Keys for AI Models (supports comma-separated lists for pooling/failover key rotation)
+    GEMINI_API_KEY="AIzaSyKeyOne,AIzaSyKeyTwo,AIzaSyKeyThree"
+    HUGGINGFACE_API_KEY="hf_token_one,hf_token_two"
     ```
 
 ---

@@ -42,17 +42,25 @@ sequenceDiagram
     User->>FE: Sketch layout & Enter Prompt
     User->>FE: Click "Execute Run"
     FE->>BE: POST /api/renders (Prompt, Base64 Sketch, Hyperparameters)
-    Note over BE: Generate UUID for Job
-    BE->>DB: Insert Job (Status = Pending)
-    BE->>Celery: trigger process_render_job.delay(job_id, params)
-    BE-->>FE: Return Job UUID (HTTP 202 Accepted)
+    Note over BE: RateLimiter checks client IP in Redis
+    alt Limit Exceeded
+        BE-->>FE: Return HTTP 429 (Too Many Requests)
+    else Limit OK
+        Note over BE: Generate UUID for Job
+        BE->>DB: Insert Job (Status = Pending)
+        BE->>Celery: trigger process_render_job.delay(job_id, params)
+        BE-->>FE: Return Job UUID (HTTP 202 Accepted)
+    end
     
     activate Celery
     Celery->>DB: Update Status = Processing
+    Note over Celery: Fetch API Keys from Pool
     Celery->>HF: Call Image-to-Image Pipeline (Denoising & Prompts)
+    Note over Celery: If 429/402/503 error, rotate key & retry
     HF-->>Celery: Return Rendered PIL Image
     Celery->>DB: Upload PIL bytes to Supabase Storage
     Celery->>HF: Send Rendered Image to Gemini for Semantic Evaluation
+    Note over Celery: If 429/503 error, rotate key & retry
     HF-->>Celery: Return CLIP Score
     Celery->>Celery: Compute local SSIM (NumPy array comparison)
     Celery->>DB: Update Job (Status = Completed, Render URL, Metrics)
