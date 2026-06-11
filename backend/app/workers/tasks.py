@@ -195,7 +195,7 @@ def process_render_job(self, job_id: str, control_strength: float = 0.7, steps: 
         
     except Exception as e:
         db.rollback()
-        error_msg = str(e)[:150]
+        error_msg = str(e)[:1000]
         print(f"[ERROR] Job {job_id} FAILED: {error_msg}")
         
         if 'job' in locals() and job:

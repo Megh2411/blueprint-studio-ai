@@ -77,7 +77,7 @@ class StableDiffusionImageToImageService:
                 ],
                 "generationConfig": {
                     "temperature": 0.7,
-                    "maxOutputTokens": 300
+                    "maxOutputTokens": 2000
                 }
             }
             
@@ -101,21 +101,32 @@ class StableDiffusionImageToImageService:
                 print(f"[WARN] Gemini layout mapper failed: {err}. Falling back to original prompt.")
                 refined_prompt = prompt
         
-        try:
-            # Use official, stable Hugging Face Inference API
-            hf_url = f"https://api-inference.huggingface.co/models/{self.model_id}"
-            hf_headers = {
-                "Authorization": f"Bearer {hf_key}",
-                "Content-Type": "application/json"
-            }
-            flux_payload = {
-                "inputs": refined_prompt
-            }
-            
-            flux_r = requests.post(hf_url, headers=hf_headers, json=flux_payload, timeout=25)
-            flux_r.raise_for_status()
-            
-            res_img = Image.open(io.BytesIO(flux_r.content)).convert("RGB")
-            return GeneratedImageResult(res_img)
-        except Exception as err:
-            raise RuntimeError(f"Model generation failed: {err}")
+        # Define URLs to try in case of DNS/network resolution issues
+        hf_urls = [
+            f"https://api-inference.huggingface.co/models/{self.model_id}",
+            f"https://router.huggingface.co/hf-inference/models/{self.model_id}"
+        ]
+        
+        last_error = None
+        for hf_url in hf_urls:
+            import time
+            for attempt in range(2):
+                try:
+                    hf_headers = {
+                        "Authorization": f"Bearer {hf_key}",
+                        "Content-Type": "application/json"
+                    }
+                    flux_payload = {
+                        "inputs": refined_prompt
+                    }
+                    flux_r = requests.post(hf_url, headers=hf_headers, json=flux_payload, timeout=25)
+                    flux_r.raise_for_status()
+                    
+                    res_img = Image.open(io.BytesIO(flux_r.content)).convert("RGB")
+                    return GeneratedImageResult(res_img)
+                except Exception as err:
+                    last_error = err
+                    print(f"[ML] Attempt {attempt+1} failed for {hf_url}: {err}")
+                    time.sleep(1.5)
+        
+        raise RuntimeError(f"Model generation failed: {last_error}")
