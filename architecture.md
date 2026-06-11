@@ -19,7 +19,7 @@ graph TD
     Queue --->|Fetch Task| Worker[Celery Background Worker]
     Worker --->|SQLAlchemy Update| DB
     Worker --->|Upload Image| Storage[(Supabase Storage Buckets)]
-    Worker --->|Optimize / Score| Gemini[Gemini 2.5 Flash API]
+    Worker --->|Optimize / Score| Gemini[Gemini 3.1 Flash-Lite API]
     Worker --->|Denoise Latents| HF[Hugging Face FLUX API]
 ```
 
