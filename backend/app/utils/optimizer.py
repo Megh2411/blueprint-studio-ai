@@ -39,11 +39,28 @@ async def optimize_prompt(user_prompt: str) -> str:
 
     try:
         # Use httpx for a pure, native async network call
+        import asyncio
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=10.0)
-            response.raise_for_status()
-            
-            data = response.json()
+            data = None
+            for attempt in range(3):
+                try:
+                    response = await client.post(url, json=payload, timeout=10.0)
+                    if response.status_code in (429, 503, 502):
+                        print(f"[WARN] Gemini async returned {response.status_code}. Retrying in {1.5 * (attempt + 1)}s...")
+                        await asyncio.sleep(1.5 * (attempt + 1))
+                        continue
+                    response.raise_for_status()
+                    data = response.json()
+                    break
+                except Exception as attempt_err:
+                    if attempt == 2:
+                        raise attempt_err
+                    print(f"[WARN] Gemini async attempt {attempt+1} failed: {attempt_err}. Retrying...")
+                    await asyncio.sleep(1.5 * (attempt + 1))
+
+            if not data:
+                raise RuntimeError("Gemini failed to return data after async retries")
+
             # Parse the Gemini REST response structure
             optimized_text = data["candidates"][0]["content"]["parts"][0]["text"]
             return optimized_text.strip()

@@ -82,10 +82,28 @@ class StableDiffusionImageToImageService:
             }
             
             try:
-                gemini_r = requests.post(gemini_url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
-                gemini_r.raise_for_status()
-                data = gemini_r.json()
+                # Robust retry logic for Gemini (handling 429/503 rate limits)
+                import time
+                data = None
+                for attempt in range(3):
+                    try:
+                        gemini_r = requests.post(gemini_url, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+                        if gemini_r.status_code in (429, 503, 502):
+                            print(f"[WARN] Gemini returned {gemini_r.status_code}. Retrying in {1.5 * (attempt + 1)}s...")
+                            time.sleep(1.5 * (attempt + 1))
+                            continue
+                        gemini_r.raise_for_status()
+                        data = gemini_r.json()
+                        break
+                    except Exception as attempt_err:
+                        if attempt == 2:
+                            raise attempt_err
+                        print(f"[WARN] Gemini attempt {attempt+1} failed: {attempt_err}. Retrying...")
+                        time.sleep(1.5 * (attempt + 1))
                 
+                if not data:
+                    raise RuntimeError("Gemini failed to return data after retries")
+
                 candidates = data.get("candidates", [])
                 if candidates:
                     content = candidates[0].get("content", {})
