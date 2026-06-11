@@ -35,9 +35,11 @@ class StableDiffusionImageToImageService:
         from app.core.config import settings
         raw_keys = settings.GEMINI_API_KEY or ""
         api_keys = [k.strip() for k in raw_keys.split(",") if k.strip()]
-        hf_key = settings.HUGGINGFACE_API_KEY
+        
+        raw_hf_keys = settings.HUGGINGFACE_API_KEY or ""
+        hf_keys = [k.strip() for k in raw_hf_keys.split(",") if k.strip()]
  
-        if not api_keys or not hf_key:
+        if not api_keys or not hf_keys:
             raise ValueError("Both GEMINI_API_KEY and HUGGINGFACE_API_KEY must be set in backend .env.")
  
         import numpy as np
@@ -131,25 +133,36 @@ class StableDiffusionImageToImageService:
         ]
         
         last_error = None
-        for hf_url in hf_urls:
+        for hf_key_idx, hf_key in enumerate(hf_keys):
             import time
-            for attempt in range(2):
-                try:
-                    hf_headers = {
-                        "Authorization": f"Bearer {hf_key}",
-                        "Content-Type": "application/json"
-                    }
-                    flux_payload = {
-                        "inputs": refined_prompt
-                    }
-                    flux_r = requests.post(hf_url, headers=hf_headers, json=flux_payload, timeout=25)
-                    flux_r.raise_for_status()
-                    
-                    res_img = Image.open(io.BytesIO(flux_r.content)).convert("RGB")
-                    return GeneratedImageResult(res_img)
-                except Exception as err:
-                    last_error = err
-                    print(f"[ML] Attempt {attempt+1} failed for {hf_url}: {err}")
-                    time.sleep(1.5)
+            for hf_url in hf_urls:
+                for attempt in range(2):
+                    try:
+                        hf_headers = {
+                            "Authorization": f"Bearer {hf_key}",
+                            "Content-Type": "application/json"
+                        }
+                        flux_payload = {
+                            "inputs": refined_prompt
+                        }
+                        flux_r = requests.post(hf_url, headers=hf_headers, json=flux_payload, timeout=25)
+                        
+                        # Handle Hugging Face rate limits or credit exhaustion (402 Payment Required / 429 / 403 / 503)
+                        if flux_r.status_code in (429, 402, 403, 503):
+                            print(f"[WARN] HF key {hf_key_idx+1} returned {flux_r.status_code} on {hf_url}. Switching key...")
+                            last_error = RuntimeError(f"HF Key {hf_key_idx+1} rate-limited/exhausted (Status: {flux_r.status_code})")
+                            break # Break attempt loop
+                        
+                        flux_r.raise_for_status()
+                        res_img = Image.open(io.BytesIO(flux_r.content)).convert("RGB")
+                        return GeneratedImageResult(res_img)
+                    except Exception as err:
+                        last_error = err
+                        print(f"[ML] HF key {hf_key_idx+1} attempt {attempt+1} failed for {hf_url}: {err}")
+                        time.sleep(1.0)
+                
+                # If we broke out of the attempt loop due to a rate limit/exhaustion, let's switch key immediately instead of trying the next URL
+                if last_error and ("rate-limited" in str(last_error) or "exhausted" in str(last_error)):
+                    break
         
         raise RuntimeError(f"Model generation failed: {last_error}")
