@@ -31,7 +31,7 @@ try:
         new_user = User(id=user_uuid, email=dummy_email)
         db.add(new_user)
         db.commit()
-        print("🎉 Shadow user profile successfully created!")
+        print("[SUCCESS] Shadow user profile successfully created!")
     else:
         print("User already exists.")
 
@@ -47,14 +47,14 @@ try:
     )
     db.add(new_job)
     db.commit()
-    print("🎉 Render job successfully created with status=COMPLETED!")
+    print("[SUCCESS] Render job successfully created with status=COMPLETED!")
 
     print("\n3. Testing User History fetch...")
     history = db.query(RenderJob).filter(
         RenderJob.user_id == user_uuid,
         RenderJob.status == JobStatus.COMPLETED
     ).all()
-    print(f"🎉 History query returned {len(history)} jobs!")
+    print(f"[SUCCESS] History query returned {len(history)} jobs!")
     for j in history:
         print(f"- Job: {j.job_id}, Prompt: '{j.prompt}', Status: {j.status}")
 
@@ -62,10 +62,10 @@ try:
     # Cascade delete will delete render jobs automatically
     db.delete(db.query(User).filter(User.id == user_uuid).first())
     db.commit()
-    print("🎉 Cleanup completed!")
+    print("[SUCCESS] Cleanup completed!")
 
 except Exception as e:
     db.rollback()
-    print(f"❌ DB Test failed: {e}")
+    print(f"[ERROR] DB Test failed: {e}")
 finally:
     db.close()
