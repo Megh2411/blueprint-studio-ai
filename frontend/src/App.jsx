@@ -45,14 +45,14 @@ export default function App() {
 
   useEffect(() => {
     clearCanvas();
-    const currentApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+    const currentApiUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
     console.log("[BLUEPRINT STUDIO AI] Current Backend API URL:", currentApiUrl);
     let socket;
     let reconnectTimeout;
 
     const connectWebSocket = () => {
       console.log("[WEBSOCKET] Connecting...");
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
       const wsProto = apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
       const cleanHost = apiBaseUrl.replace(/^https?:\/\//, '');
       const wsUrl = `${wsProto}://${cleanHost}/ws/${clientId}`;
@@ -162,7 +162,7 @@ export default function App() {
     if (!prompt) return;
     setIsOptimizing(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
       const response = await fetch(`${apiBaseUrl}/api/prompt/optimize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -215,7 +215,7 @@ export default function App() {
     const base64Image = canvas.toDataURL('image/png');
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
       await fetch(`${apiBaseUrl}/api/renders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -8,7 +8,7 @@ const Gallery = ({ clientId, refreshTrigger, onLoadJob, onLoadRenderAsSketch }) 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
         const response = await fetch(`${apiBaseUrl}/api/renders/history/${clientId}`);
         if (!response.ok) throw new Error('Failed to fetch history');
         

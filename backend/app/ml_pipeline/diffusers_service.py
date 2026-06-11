@@ -16,7 +16,7 @@ class StableDiffusionImageToImageService:
     Utilizes a Google Gemini + Hugging Face FLUX.1 layout-preserving pipeline.
     """
 
-    def __init__(self, model_id: str = "runwayml/stable-diffusion-v1-5") -> None:
+    def __init__(self, model_id: str = "black-forest-labs/FLUX.1-schnell") -> None:
         self.model_id = model_id
 
     def generate(
@@ -58,13 +58,9 @@ class StableDiffusionImageToImageService:
             # Use Gemini to describe composition and preserve structure
             gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
             system_instruction = (
-                "You are an AI layout-preserving prompt architect. Your job is to analyze the user's input image (which might be a crude sketch or a drawing) "
-                "and their text prompt. Describe the composition, geometry, visual structure, shapes, and positions of items in the image, "
-                "and rewrite the description to match the user's target prompt. For example, if the image shows a red rose in the center with a green stem "
-                "and the user prompt is 'create a hibiscus similar to the image', output a detailed prompt for a text-to-image model describing a "
-                "hibiscus flower located in the exact same center position, with similar stem structure and background composition. "
-                "Be concise (under 80 words). Ensure your output is a complete, fully finished sentence or description, and never cut off mid-sentence. "
-                "Return ONLY the final detailed prompt. Do not include any intro, markdown, or chat text."
+                "You are an AI layout-preserving prompt architect. Your job is to analyze the user's sketch and text prompt, and write a single, cohesive, highly descriptive prompt for an image generator. "
+                "Describe the subject, colors, composition, and background, ensuring you match the shapes and positions from the sketch. "
+                "Be extremely concise (under 60 words). Return ONLY the final prompt. Do not include any intro, conversational filler, markdown, or incomplete sentences."
             )
             
             payload = {
@@ -80,7 +76,7 @@ class StableDiffusionImageToImageService:
                     }
                 ],
                 "generationConfig": {
-                    "temperature": 0.1,
+                    "temperature": 0.7,
                     "maxOutputTokens": 300
                 }
             }
